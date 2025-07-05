@@ -15,4 +15,4 @@
 *.vrb
 *.xdv
 
-target/
+Compiler/target/
