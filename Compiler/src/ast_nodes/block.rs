@@ -1,4 +1,4 @@
-use crate::types_tree::tree_node::TypeNode;
+use crate::lexer_parser::types_tree::tree_node::TypeNode;
 
 use super::expression::Expression;
 

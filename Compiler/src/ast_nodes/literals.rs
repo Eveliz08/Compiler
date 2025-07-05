@@ -1,6 +1,6 @@
 use core::str;
 
-use crate::{lexer_parser::tokens::Span, types_tree::tree_node::TypeNode};
+use crate::{lexer_parser::tokens::Span, lexer_parser::types_tree::tree_node::TypeNode};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct NumberLiteralNode {

@@ -12,8 +12,9 @@ mod lexer_parser;
 mod semantic;
 mod visitor;
 
+include!(concat!(env!("OUT_DIR"), "/parser.rs"));
 
-use crate::parser::ProgramParser;
+
 
 fn main() {
     println!("Compilador iniciado");
@@ -31,8 +32,8 @@ fn main() {
     let input_hulk = fs::read_to_string("../script.hulk").expect("Failed to read input file");
 
     // Crear el parser
-    let parser = HulkParser::new();
-    
+    let parser = ProgramParser::new();
+
     // Intentar parsear el código
     match parser.parse(&input) {
         Ok(ast) => {

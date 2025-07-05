@@ -12,7 +12,7 @@
 //! - `new()`  
 //!   Crea una nueva instancia de `HulkParser`.
 //!
-//! - `parse(&self, input: &str) -> Result<ProgramNode, Vec<String>>`  
+//! - `parse(&self, input: &str) -> Result<Program, Vec<String>>`  
 //!   Intenta parsear el código fuente. Si hay errores, devuelve una lista de mensajes de error formateados con colores, línea, columna, contexto y carets (`^`) indicando la posición exacta del error.
 //!
 //! ## Funciones auxiliares
@@ -42,10 +42,10 @@
 //! }
 use std::collections::HashSet;
 
-use crate::ast_nodes::program::Program;
+// use crate::ast_nodes::program::Program;
 use lalrpop_util::ParseError;
+include!(concat!(env!("OUT_DIR"), "/parser.rs"));
 
-use crate::parser::ProgramParser;
 
 pub struct HulkParser {
     parser: ProgramParser,
@@ -120,7 +120,7 @@ impl HulkParser {
             .replace('#', "")
     }
 
-    pub fn parse(&self, input: &str) -> Result<ProgramNode, Vec<String>> {
+    pub fn parse(&self, input: &str) -> Result<Program, Vec<String>> {
         let mut issues = Vec::new();
         let result = self.parser.parse(input);
 

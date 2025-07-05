@@ -1,12 +1,13 @@
 [package]
-name = "compilador"
+name = "Hulk_Compiler"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 build = "build.rs"
 
-[build-dependencies]
-lalrpop = "0.20"
-
 [dependencies]
-regex = "1.9.5"
-lalrpop-util = "0.20"
+lalrpop-util = { version = "0.22.1", features = ["lexer"] }
+either = "1.9"
+
+[build-dependencies]
+lalrpop = "0.22.1"
+

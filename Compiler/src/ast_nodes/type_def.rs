@@ -4,8 +4,8 @@ use crate::{
         function_def::{FunctionDefNode, FunctionParams},
         let_in::Assignment,
     },
-    tokens::Span,
-    types_tree::tree_node::TypeNode,
+    lexer_parser::tokens::Span,
+    lexer_parser::types_tree::tree_node::TypeNode,
 };
 
 pub struct TypeInherits {
