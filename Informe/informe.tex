@@ -1,0 +1,60 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb}
+\usepackage{enumitem}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\title{Informe: Construcción de un Generador de Lexer}
+\author{Nombre del Autor}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+En este informe se describe el proceso sistemático para la construcción de un generador de lexer, detallando cada etapa fundamental y su justificación. El objetivo es proporcionar una guía clara y modular para el desarrollo eficiente de analizadores léxicos.
+\end{abstract}
+
+\section{Introducción}
+El análisis léxico es la primera fase en la construcción de compiladores e intérpretes. Un lexer o analizador léxico identifica los componentes básicos (tokens) de un lenguaje de programación a partir de su representación textual. Este informe presenta una metodología estructurada para construir un generador de lexer, fundamentando cada etapa del proceso.
+
+\section{Proceso para Construir un Generador de Lexer}
+El proceso de construcción de un generador de lexer se puede dividir en varias etapas modulares, cada una con un propósito específico:
+
+\subsection{Definición de Tokens mediante Expresiones Regulares}
+El primer paso consiste en definir los tokens que el lenguaje reconocerá, como identificadores, números y operadores. Cada tipo de token se describe mediante una expresión regular (ER), lo que permite especificar patrones léxicos de forma concisa y precisa.
+
+\begin{itemize}
+    \item \textbf{Ejemplo de tokens:}
+    \begin{itemize}
+        \item \texttt{IDENT} = \verb|[a-zA-Z_][a-zA-Z0-9_]*|
+        \item \texttt{NUM} = \verb|[0-9]+|
+    \end{itemize}
+\end{itemize}
+
+\subsection{Conversión de ER a AFND (Algoritmo de Thompson)}
+Cada expresión regular se transforma en un autómata finito no determinista (AFND) utilizando el algoritmo de Thompson. Este algoritmo proporciona reglas mecánicas para construir AFNDs a partir de operaciones básicas de ER (concatenación, alternancia, cierre, etc.), permitiendo transiciones $\epsilon$ y múltiples transiciones para el mismo símbolo.
+
+\subsection{Combinación de AFNDs}
+Todos los AFNDs individuales se combinan en un único AFND global. Esto se logra conectando cada AFND a un nuevo estado inicial común mediante transiciones $\epsilon$, facilitando la gestión de múltiples patrones léxicos en un solo autómata.
+
+\subsection{Conversión de AFND a AFD (Algoritmo de Subconjuntos)}
+El AFND combinado se convierte en un autómata finito determinista (AFD) mediante el algoritmo de subconjuntos. En este proceso, cada estado del AFD representa un conjunto de estados del AFND, eliminando el no determinismo y las transiciones $\epsilon$.
+
+\subsection{Minimización del AFD (Algoritmo de Hopcroft)}
+Para optimizar el autómata, se aplica el algoritmo de Hopcroft, que minimiza el número de estados del AFD fusionando aquellos que son equivalentes. Esto resulta en un autómata más eficiente y fácil de implementar.
+
+\subsection{Implementación del AFD}
+El AFD final se implementa mediante:
+\begin{itemize}
+    \item Una tabla de transiciones (matriz estado $\times$ carácter $\rightarrow$ nuevo estado).
+    \item Una tabla de estados de aceptación (asociando cada estado final con el token reconocido).
+\end{itemize}
+
+\section{Conclusión}
+La construcción modular y argumentada de un generador de lexer permite obtener analizadores léxicos eficientes y mantenibles. Cada etapa del proceso contribuye a la robustez y claridad del sistema, facilitando su extensión y adaptación a nuevos lenguajes.
+
+\end{document}
