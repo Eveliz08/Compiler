@@ -11,7 +11,7 @@ use super::while_loop::WhileNode;
 use crate::ast_nodes::print::PrintNode;
 use crate::ast_nodes::type_instance::TypeInstanceNode;
 use crate::ast_nodes::type_member_access::{TypeFunctionAccessNode, TypePropAccessNode};
-use crate::lexer_parser::tokens::{OperatorToken, Span};
+use crate::tokens::{OperatorToken, Span};
 use crate::visitor::accept::Accept;
 use crate::visitor::visitor_trait::Visitor;
 

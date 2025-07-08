@@ -1,4 +1,6 @@
-use crate::{ast_nodes::expression::Expression, lexer_parser::tokens::Span, lexer_parser::types_tree::tree_node::TypeNode};
+use crate::ast_nodes::expression::Expression;
+use crate::tokens::Span;
+use crate::types_tree::tree_node::TypeNode;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct ForNode {

@@ -15,46 +15,166 @@
 \maketitle
 
 \begin{abstract}
-En este informe se describe el proceso sistemático para la construcción de un generador de lexer, detallando cada etapa fundamental y su justificación. El objetivo es proporcionar una guía clara y modular para el desarrollo eficiente de analizadores léxicos.
+
+El proyecto consiste en el diseño e implementación de un compilador desarrollado en Rust, que utiliza LLVM para la generación de código intermedio y clang para la compilación final. El compilador abarca todas las fases fundamentales: análisis léxico (lexer), sintáctico (parser), semántico y generación de código. El flujo de trabajo parte de la lectura del código fuente, construcción del Árbol de Sintaxis Abstracta (AST), validación semántica y generación de código intermedio (LLVM-IR), hasta la obtención del ejecutable final. El proceso está automatizado mediante un Makefile, facilitando la compilación, ejecución y limpieza de artefactos generados.
+
+\vspace{0.5em}
+\textbf{Nota:} Para una comprensión rigurosa, se recomienda precisar las definiciones de cada fase del compilador y los conceptos de autómatas y gramáticas, ya que son fundamentales para el diseño de analizadores léxicos y sintácticos.
+
 \end{abstract}
 
-\section{Introducción}
-El análisis léxico es la primera fase en la construcción de compiladores e intérpretes. Un lexer o analizador léxico identifica los componentes básicos (tokens) de un lenguaje de programación a partir de su representación textual. Este informe presenta una metodología estructurada para construir un generador de lexer, fundamentando cada etapa del proceso.
+\section{Gramática Formal del Lenguaje}
+La gramática del lenguaje que se va a compilar se define formalmente mediante una gramática libre de contexto (GLC), especificando los símbolos terminales, no terminales, el símbolo inicial y las reglas de producción. Es importante precisar que una GLC se expresa como una cuádrupla $(V, \Sigma, R, S)$, donde $V$ es el conjunto de símbolos no terminales, $\Sigma$ el conjunto de símbolos terminales, $R$ el conjunto de reglas de producción y $S$ el símbolo inicial.
 
-\section{Proceso para Construir un Generador de Lexer}
-El proceso de construcción de un generador de lexer se puede dividir en varias etapas modulares, cada una con un propósito específico:
+\subsection*{Símbolos terminales}
+\begin{itemize}
+    \item \texttt{IDENTIFIER}, \texttt{NUMBER}, \texttt{STRING}
+    \item \texttt{FUNCTION}, \texttt{TYPE}, \texttt{LET}, \texttt{IN}, \texttt{IF}, \texttt{ELSE}, \texttt{ELIF}, \texttt{WHILE}, \texttt{FOR}, \texttt{NEW}, \texttt{PRINT}, \texttt{INHERITS}, \texttt{TRUE}, \texttt{FALSE}
+    \item \texttt{ASSIGN\_OP}, \texttt{DESTRUCTIVE\_ASSIGN\_OP}, \texttt{ARROW\_OP}, \texttt{LOGICAL\_OR\_OP}, \texttt{LOGICAL\_AND\_OP}
+    \item \texttt{EQUALITY\_OP}, \texttt{COMPARISON\_OP}, \texttt{TERM\_OP}, \texttt{FACTOR\_OP}, \texttt{POW\_OP}, \texttt{UNARY\_OP}, \texttt{DOT\_OP}
+    \item \texttt{LPAREN}, \texttt{RPAREN}, \texttt{LBRACE}, \texttt{RBRACE}, \texttt{SEMICOLON}, \texttt{COMMA}, \texttt{COLON}
+\end{itemize}
+\vspace{-0.5em}
+\textit{Precisión:} Los símbolos terminales corresponden a los tokens reconocidos por el lexer. Es recomendable definir formalmente las expresiones regulares asociadas a cada token para evitar ambigüedades.
 
-\subsection{Definición de Tokens mediante Expresiones Regulares}
-El primer paso consiste en definir los tokens que el lenguaje reconocerá, como identificadores, números y operadores. Cada tipo de token se describe mediante una expresión regular (ER), lo que permite especificar patrones léxicos de forma concisa y precisa.
+\subsection*{Símbolos no terminales}
+\begin{itemize}
+    \item \texttt{Program}, \texttt{Statement}, \texttt{FunctionDef}, \texttt{FunctionFullDef}, \texttt{FunctionArrowDef}
+    \item \texttt{TypeDef}, \texttt{Inheritance}, \texttt{TypeBody}, \texttt{MemberDef}, \texttt{Expr}, \texttt{DestructiveAssignExpr}
+    \item \texttt{LogicalOrExpr}, \texttt{LogicalAndExpr}, \texttt{EqualityExpr}, \texttt{ComparisonExpr}, \texttt{TermExpr}
+    \item \texttt{FactorExpr}, \texttt{ExponentExpr}, \texttt{UnaryExpr}, \texttt{CompositeExpr}, \texttt{PrimaryExpr}
+    \item \texttt{Literal}, \texttt{FunctionCall}, \texttt{ArgList}, \texttt{LetIn}, \texttt{IfElse}, \texttt{WhileLoop}, \texttt{ForLoop}
+    \item \texttt{CodeBlock}, \texttt{ExprList}, \texttt{PrintExpr}, \texttt{AssignmentList}, \texttt{Assignment}, \texttt{Params}, \texttt{Signature}
+\end{itemize}
+\vspace{-0.5em}
+\textit{Precisión:} Los símbolos no terminales definen la estructura sintáctica del lenguaje. Es recomendable identificar el símbolo inicial explícitamente (en este caso, \texttt{Program}).
+
+\subsection*{Definiciones léxicas}
+\begin{description}
+    \item[\texttt{IDENTIFIER}] \texttt{[A-Za-z][A-Za-z0-9\_]*}
+    \item[\texttt{NUMBER}] \texttt{[0-9]+(\.[0-9]+)?}
+    \item[\texttt{STRING}] \verb|``([^"\\]\\.)*''|
+    \item[\texttt{BOOLEAN}] \texttt{true}\textbar{}\texttt{false}
+\end{description}
+
+\subsubsection*{Operadores}
+\begin{description}
+    \item[\texttt{ASSIGN\_OP}] \verb|=|
+    \item[\texttt{DESTRUCTIVE\_ASSIGN\_OP}] \verb|:=|
+    \item[\texttt{ARROW\_OP}] \verb|=>|
+    \item[\texttt{LOGICAL\_OR\_OP}] \verb"|" 
+    \item[\texttt{LOGICAL\_AND\_OP}] \verb|&|
+    \item[\texttt{EQUALITY\_OP}] \verb|==| \verb|!=|
+    \item[\texttt{COMPARISON\_OP}] \verb|<| \verb|<=| \verb|>| \verb|>=|
+    \item[\texttt{TERM\_OP}] \verb|+| \verb|-| \verb|@|
+    \item[\texttt{FACTOR\_OP}] \verb|*| \verb|/| \verb|%|
+    \item[\texttt{POW\_OP}] \verb|^|
+    \item[\texttt{UNARY\_OP}] \verb|!| \verb|-|
+    \item[\texttt{DOT\_OP}] \verb|.|
+\end{description}
+
+\subsubsection*{Delimitadores}
+\begin{description}
+    \item[\texttt{LPAREN}] \verb|(|
+    \item[\texttt{RPAREN}] \verb|)|
+    \item[\texttt{LBRACE}] \verb|{|
+    \item[\texttt{RBRACE}] \verb|}|
+    \item[\texttt{SEMICOLON}] \verb|;|
+    \item[\texttt{COMMA}] \verb|,|
+    \item[\texttt{COLON}] \verb|:|
+\end{description}
+
+\subsubsection*{Palabras reservadas}
+\begin{description}
+    \item[\texttt{FUNCTION}] \verb|function|
+    \item[\texttt{TYPE}] \verb|type|
+    \item[\texttt{LET}] \verb|let|
+    \item[\texttt{IN}] \verb|in|
+    \item[\texttt{IF}] \verb|if|
+    \item[\texttt{ELSE}] \verb|else|
+    \item[\texttt{ELIF}] \verb|elif|
+    \item[\texttt{WHILE}] \verb|while|
+    \item[\texttt{FOR}] \verb|for|
+    \item[\texttt{NEW}] \verb|new|
+    \item[\texttt{PRINT}] \verb|print|
+    \item[\texttt{INHERITS}] \verb|inherits|
+\end{description}
+
+\subsection*{Reglas de producción}
+
+\begin{align*}
+\text{Program} &\rightarrow (\text{Statement}\;\text{SEMICOLON})^*\, \text{Statement}?\, \text{SEMICOLON} \\
+\text{Statement} &\rightarrow \text{FunctionDef} \mid \text{TypeDef} \mid \text{Expr} \\
+\text{FunctionDef} &\rightarrow \text{FunctionFullDef} \mid \text{FunctionArrowDef} \\
+\text{FunctionFullDef} &\rightarrow \text{FUNCTION}\; \text{IDENTIFIER}\; \text{Params}\; \text{COLON}\; \text{Signature}\; \text{CodeBlock} \\
+\text{FunctionArrowDef} &\rightarrow \text{FUNCTION}\; \text{IDENTIFIER}\; \text{Params}\; \text{COLON}\; \text{Signature}\; \text{ARROW}\; \text{Expr} \\
+\text{Params} &\rightarrow \text{LPAREN}\; (\text{IDENTIFIER}\; \text{COLON}\; \text{Signature}\; (\text{COMMA}\; \text{IDENTIFIER}\; \text{COLON}\; \text{Signature})^*)? \text{RPAREN} \\
+\text{TypeDef} &\rightarrow \text{TYPE}\; \text{IDENTIFIER}\; \text{Params}?\, \text{Inheritance}?\, \text{LBRACE}\; \text{TypeBody}\; \text{RBRACE} \\
+\text{Inheritance} &\rightarrow \text{INHERITS}\; \text{IDENTIFIER}\; \text{ArgList}? \\
+\text{TypeBody} &\rightarrow (\text{MemberDef}\; \text{SEMICOLON})^*\, \text{MemberDef}? \\
+\text{MemberDef} &\rightarrow \text{IDENTIFIER}\; \text{ASSIGN}\; \text{Expr} \mid \text{FunctionDef} \\
+\text{Expr} &\rightarrow \text{DestructiveAssignExpr} \mid \text{LogicalOrExpr} \\
+\text{DestructiveAssignExpr} &\rightarrow \text{PrimaryExpr}\; \text{DESTRUCTIVE\_ASSIGN\_OP}\; \text{Expr} \\
+\text{LogicalOrExpr} &\rightarrow \text{LogicalOrExpr}\; \text{LOGICAL\_OR\_OP}\; \text{LogicalAndExpr} \mid \text{LogicalAndExpr} \\
+\text{LogicalAndExpr} &\rightarrow \text{LogicalAndExpr}\; \text{LOGICAL\_AND\_OP}\; \text{EqualityExpr} \mid \text{EqualityExpr} \\
+\text{EqualityExpr} &\rightarrow \text{EqualityExpr}\; \text{EQUALITY\_OP}\; \text{ComparisonExpr} \mid \text{ComparisonExpr} \\
+\text{ComparisonExpr} &\rightarrow \text{ComparisonExpr}\; \text{COMPARISON\_OP}\; \text{TermExpr} \mid \text{TermExpr} \\
+\text{TermExpr} &\rightarrow \text{TermExpr}\; \text{TERM\_OP}\; \text{FactorExpr} \mid \text{FactorExpr} \\
+\text{FactorExpr} &\rightarrow \text{FactorExpr}\; \text{FACTOR\_OP}\; \text{ExponentExpr} \mid \text{ExponentExpr} \\
+\text{ExponentExpr} &\rightarrow \text{UnaryExpr}\; \text{POW\_OP}\; \text{ExponentExpr} \mid \text{UnaryExpr} \\
+\text{UnaryExpr} &\rightarrow \text{UNARY\_OP}\; \text{UnaryExpr} \mid \text{CompositeExpr} \\
+\text{CompositeExpr} &\rightarrow \text{LetIn} \mid \text{IfElse} \mid \text{WhileLoop} \mid \text{ForLoop} \mid \text{PrimaryExpr} \\
+\text{PrimaryExpr} &\rightarrow \text{FunctionCall} \mid \text{NEW}\; \text{IDENTIFIER}\; \text{ArgList} \mid \text{PrimaryExpr}\; \text{DOT\_OP}\; \text{IDENTIFIER} \mid \\
+&\quad \text{PrimaryExpr}\; \text{DOT\_OP}\; \text{FunctionCall} \mid \text{Literal} \mid \text{IDENTIFIER} \mid \text{LPAREN}\; \text{Expr}\; \text{RPAREN} \mid \text{CodeBlock} \mid \text{PrintExpr} \\
+\text{Literal} &\rightarrow \text{NUMBER} \mid \text{STRING} \mid \text{BOOLEAN} \\
+\text{FunctionCall} &\rightarrow \text{IDENTIFIER}\; \text{ArgList} \\
+\text{ArgList} &\rightarrow \text{LPAREN}\; (\text{Expr}\; (\text{COMMA}\; \text{Expr})^*)? \text{RPAREN} \\
+\text{LetIn} &\rightarrow \text{LET}\; \text{AssignmentList}\; \text{IN}\; \text{CompositeExpr} \\
+\text{IfElse} &\rightarrow \text{IF}\; \text{LPAREN}\; \text{Expr}\; \text{RPAREN}\; \text{CodeBlock}\; (\text{ELIF}\; \text{LPAREN}\; \text{Expr}\; \text{RPAREN}\; \text{CodeBlock})^*\, (\text{ELSE}\; \text{CodeBlock})? \\
+\text{WhileLoop} &\rightarrow \text{WHILE}\; \text{LPAREN}\; \text{Expr}\; \text{RPAREN}\; \text{CompositeExpr} \\
+\text{ForLoop} &\rightarrow \text{FOR}\; \text{LPAREN}\; \text{IDENTIFIER}\; \text{IN}\; \text{RANGE}\; \text{LPAREN}\; \text{Expr}\; \text{COMMA}\; \text{Expr}\; \text{RPAREN}\; \text{RPAREN}\; \text{CompositeExpr} \\
+\text{CodeBlock} &\rightarrow \text{LBRACE}\; \text{ExprList}\; \text{RBRACE} \\
+\text{ExprList} &\rightarrow (\text{Expr}\; \text{SEMICOLON})^*\, \text{Expr}? \\
+\text{PrintExpr} &\rightarrow \text{PRINT}\; \text{LPAREN}\; \text{Expr}\; \text{RPAREN} \\
+\text{AssignmentList} &\rightarrow \text{Assignment}\; (\text{COMMA}\; \text{Assignment})^* \\
+\text{Assignment} &\rightarrow \text{IDENTIFIER}\; \text{ASSIGN}\; \text{Expr} \\
+\text{Signature} &\rightarrow \text{IDENTIFIER}
+\end{align*}
+
+\section{Manejo de Posiciones y Construcción del AST con LALRPOP}
+
+En el proceso de análisis sintáctico, cada token reconocido es acompañado por una estructura denominada \texttt{Span}, que almacena las posiciones de inicio y fin del token dentro del código fuente (medidas en offsets de byte). Esta información es fundamental para:
 
 \begin{itemize}
-    \item \textbf{Ejemplo de tokens:}
-    \begin{itemize}
-        \item \texttt{IDENT} = \verb|[a-zA-Z_][a-zA-Z0-9_]*|
-        \item \texttt{NUM} = \verb|[0-9]+|
-    \end{itemize}
+    \item \textbf{Rastreo preciso de ubicaciones:} Permite identificar la posición exacta de cada elemento del programa, facilitando la depuración y el análisis posterior.
+    \item \textbf{Generación de mensajes de error detallados:} El \texttt{Span} posibilita que los errores sintácticos reporten la línea, columna y contexto específico donde ocurre el problema, mejorando la experiencia del usuario.
+    \item \textbf{Conservación de metadatos en el AST:} El Árbol de Sintaxis Abstracta (AST) generado por el compilador incluye estos metadatos de ubicación en todos sus nodos, lo que resulta útil para etapas posteriores como el análisis semántico o la generación de código.
 \end{itemize}
 
-\subsection{Conversión de ER a AFND (Algoritmo de Thompson)}
-Cada expresión regular se transforma en un autómata finito no determinista (AFND) utilizando el algoritmo de Thompson. Este algoritmo proporciona reglas mecánicas para construir AFNDs a partir de operaciones básicas de ER (concatenación, alternancia, cierre, etc.), permitiendo transiciones $\epsilon$ y múltiples transiciones para el mismo símbolo.
+La generación de \texttt{Span} es gestionada automáticamente por LALRPOP en el archivo \texttt{parser.lalrpop}, utilizando las anotaciones \texttt{@L} y \texttt{@R}, que corresponden a los offsets de los tokens en el texto fuente.
 
-\subsection{Combinación de AFNDs}
-Todos los AFNDs individuales se combinan en un único AFND global. Esto se logra conectando cada AFND a un nuevo estado inicial común mediante transiciones $\epsilon$, facilitando la gestión de múltiples patrones léxicos en un solo autómata.
+\subsection*{Teoría del Parsing LR(1) y LALRPOP}
 
-\subsection{Conversión de AFND a AFD (Algoritmo de Subconjuntos)}
-El AFND combinado se convierte en un autómata finito determinista (AFD) mediante el algoritmo de subconjuntos. En este proceso, cada estado del AFD representa un conjunto de estados del AFND, eliminando el no determinismo y las transiciones $\epsilon$.
+LALRPOP genera por defecto un parser de tipo LR(1), empleando una variante llamada \emph{lane table}, que es más compacta en memoria. Los analizadores LR(1) realizan un análisis ascendente (bottom-up) con un símbolo de \emph{lookahead}, lo que garantiza:
 
-\subsection{Minimización del AFD (Algoritmo de Hopcroft)}
-Para optimizar el autómata, se aplica el algoritmo de Hopcroft, que minimiza el número de estados del AFD fusionando aquellos que son equivalentes. Esto resulta en un autómata más eficiente y fácil de implementar.
-
-\subsection{Implementación del AFD}
-El AFD final se implementa mediante:
 \begin{itemize}
-    \item Una tabla de transiciones (matriz estado $\times$ carácter $\rightarrow$ nuevo estado).
-    \item Una tabla de estados de aceptación (asociando cada estado final con el token reconocido).
+    \item \textbf{Reconocimiento eficiente:} El análisis es de complejidad $O(n)$, sin necesidad de backtracking.
+    \item \textbf{Cobertura completa:} Permite parsear cualquier gramática LR(1), que es una clase amplia y expresiva de gramáticas libres de contexto.
 \end{itemize}
 
-\section{Conclusión}
-La construcción modular y argumentada de un generador de lexer permite obtener analizadores léxicos eficientes y mantenibles. Cada etapa del proceso contribuye a la robustez y claridad del sistema, facilitando su extensión y adaptación a nuevos lenguajes.
+\textit{Precisión:} Es recomendable explicar la diferencia entre los analizadores LR(0), SLR(1), LALR(1) y LR(1), y por qué LALRPOP utiliza LR(1) con optimizaciones de memoria.
+
+Internamente, LALRPOP construye un autómata LR(0), calcula los conjuntos LR(1) y genera las tablas de parsing (shift/reduce). El código Rust resultante implementa el parser como una máquina de estados con un stack, siguiendo el paradigma clásico de los analizadores LR.
+
+\section{Recomendaciones para la Precisión Conceptual}
+
+% Para perfeccionar el informe y evitar ambigüedades, se recomienda:
+% \begin{itemize}
+%     \item Definir formalmente los conceptos de \textbf{token}, \textbf{lexema}, \textbf{expresión regular}, \textbf{autómata finito determinista (AFD)} y \textbf{autómata finito no determinista (AFND)}.
+%     \item Explicitar el símbolo inicial de la gramática.
+%     \item Incluir ejemplos de derivaciones y parseos para ilustrar el funcionamiento de la gramática y el parser.
+%     \item Precisar la relación entre los offsets de byte y las posiciones de línea/columna en el código fuente.
+%     \item Si se omite alguna definición léxica o sintáctica relevante, agregarla para evitar lagunas conceptuales.
+% \end{itemize}
 
 \end{document}

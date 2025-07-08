@@ -1,7 +1,7 @@
 use crate::{
     ast_nodes::{expression::Expression, function_call::FunctionCallNode},
-    lexer_parser::tokens::Span,
-    lexer_parser::types_tree::tree_node::TypeNode,
+    tokens::Span,
+    types_tree::tree_node::TypeNode,
 };
 
 #[derive(Debug, PartialEq, Clone)]

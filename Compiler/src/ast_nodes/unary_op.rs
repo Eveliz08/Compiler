@@ -1,5 +1,5 @@
 use super::expression::Expression;
-use crate::{lexer_parser::tokens::{OperatorToken, Span}, lexer_parser::types_tree::tree_node::TypeNode};
+use crate::{tokens::{OperatorToken, Span}, types_tree::tree_node::TypeNode};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct UnaryOpNode {
