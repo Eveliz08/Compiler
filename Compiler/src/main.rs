@@ -8,7 +8,6 @@ extern crate lalrpop_util;
 mod ast_nodes;
 mod codegen;
 mod error_reporter;
-mod intermediate;
 mod semantic_analyzer;
 mod symbol_table;
 mod tokens;
