@@ -40,6 +40,8 @@ fn main() {
             match result {
                 Ok(_) => {
                     println!("Chequeo semántico exitoso!");
+                    
+
                    
                 }
                 Err(errors) => {
