@@ -14,5 +14,5 @@
 *.snm
 *.vrb
 *.xdv
-
+*.hulk
 Compiler/target
