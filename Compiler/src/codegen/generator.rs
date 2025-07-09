@@ -1,6 +1,7 @@
 use super::context::CodegenCtx;
 // use super::llvm_utils::*; // Descomentar si se usan utilidades LLVM
 use crate::ast_nodes::program::{Program, Statement};
+use crate::codegen::utils::{declare_global, generate_printf, generate_runtime_declarations};
 use crate::visitor::accept::Accept;
 
 pub struct Generator {
@@ -20,6 +21,8 @@ impl Generator {
     pub fn generate(&mut self, program: &mut Program) {
         let mut module_code: Vec<String> = vec![];
         self.generate_header(&mut module_code);
+        declare_global(&mut module_code, &mut self.ctx);
+        generate_runtime_declarations(&mut module_code);
         module_code.push("".into());
 
         let mut body_ctx = CodegenCtx::new();
@@ -39,13 +42,10 @@ impl Generator {
         self.code = module_code.join("\n");
     }
     fn generate_header(&mut self, module_code: &mut Vec<String>) {
-        module_code.push("module my_module {".into());
+        module_code.push(" ".into());
     }
 
-    // Carcasa de funciones auxiliares usadas en generate
-    fn init_all_type_methods_and_props(&mut self, _program: &mut Program) {
-        // Implementar lógica según sea necesario
-    }
+
 
     fn get_definitions(&mut self, _program: &mut Program) -> Vec<String> {
         // Implementar lógica según sea necesario
