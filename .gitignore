@@ -15,4 +15,6 @@
 *.vrb
 *.xdv
 *.hulk
+*.ll
+*.exe
 Compiler/target
