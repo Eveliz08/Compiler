@@ -1,26 +1,25 @@
-use std::fs;
 use colored::*;
+use std::fs;
 
-#[macro_use] extern crate lalrpop_util;
+#[macro_use]
+extern crate lalrpop_util;
 
 // Module declarations
-mod error_reporter;
-mod symbol_table;
 mod ast_nodes;
 mod codegen;
+mod error_reporter;
 mod intermediate;
-mod visitor;
 mod semantic_analyzer;
+mod symbol_table;
 mod tokens;
 mod types_tree;
-use crate::{semantic_analyzer::semantic_analyzer::SemanticAnalyzer};
+mod visitor;
+use crate::semantic_analyzer::semantic_analyzer::SemanticAnalyzer;
 include!(concat!(env!("OUT_DIR"), "/parser.rs"));
 use crate::error_reporter::HulkParser;
 
-use crate::visitor::printer_visitor::PrinterVisitor;
 use crate::visitor::accept::Accept;
-
-
+use crate::visitor::printer_visitor::PrinterVisitor;
 
 fn main() {
     println!("Compilador iniciado");
@@ -51,12 +50,15 @@ fn main() {
                 }
             }
         }
-        Err(e) => {
-            println!("\x1b[31mParse Error: {:?}\x1b[0m", e);
-            std::process::exit(2);
+
+        Err(parse_err) => {
+            println!("\x1b[31mSyntax Error:\x1b[0m");
+            for err in parse_err.iter() {
+                println!("{}", err);
+            }
+            std::process::exit(1);
         }
     }
-
 }
 
 // Nueva función principal para imprimir cualquier nodo del AST
@@ -107,7 +109,11 @@ fn print_expression(expr: &ast_nodes::expression::Expression, indent: usize) {
             println!("{}{}", pad, format!("Identifier({})", i.value).cyan());
         }
         Expression::FunctionCall(f) => {
-            println!("{}{}", pad, format!("FunctionCall({})", f.function_name).magenta());
+            println!(
+                "{}{}",
+                pad,
+                format!("FunctionCall({})", f.function_name).magenta()
+            );
             for arg in &f.arguments {
                 print_expression(arg, indent + 1);
             }
@@ -160,7 +166,11 @@ fn print_expression(expr: &ast_nodes::expression::Expression, indent: usize) {
         Expression::LetIn(l) => {
             println!("{}{}", pad, "LetIn".green());
             for assign in &l.assignments {
-                println!("{}{}", pad, format!("Assignment: {}", assign.identifier).cyan());
+                println!(
+                    "{}{}",
+                    pad,
+                    format!("Assignment: {}", assign.identifier).cyan()
+                );
                 print_expression(&assign.expression, indent + 2);
             }
             println!("{}{}", pad, "Body:".bold());
@@ -172,7 +182,11 @@ fn print_expression(expr: &ast_nodes::expression::Expression, indent: usize) {
             print_expression(&d.expression, indent + 1);
         }
         Expression::TypeInstance(t) => {
-            println!("{}{}", pad, format!("TypeInstance({})", t.type_name).magenta());
+            println!(
+                "{}{}",
+                pad,
+                format!("TypeInstance({})", t.type_name).magenta()
+            );
             for arg in &t.arguments {
                 print_expression(arg, indent + 1);
             }
@@ -180,10 +194,17 @@ fn print_expression(expr: &ast_nodes::expression::Expression, indent: usize) {
         Expression::TypeFunctionAccess(t) => {
             println!("{}{}", pad, "TypeFunctionAccess".magenta());
             print_expression(&t.object, indent + 1);
-            print_expression(&ast_nodes::expression::Expression::FunctionCall((*t.member).clone()), indent + 1);
+            print_expression(
+                &ast_nodes::expression::Expression::FunctionCall((*t.member).clone()),
+                indent + 1,
+            );
         }
         Expression::TypePropAccess(t) => {
-            println!("{}{}", pad, format!("TypePropAccess({})", t.member).magenta());
+            println!(
+                "{}{}",
+                pad,
+                format!("TypePropAccess({})", t.member).magenta()
+            );
             print_expression(&t.object, indent + 1);
         }
         Expression::Print(p) => {
