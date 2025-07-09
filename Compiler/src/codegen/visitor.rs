@@ -1,4 +1,4 @@
-use super::llvm_utils::{to_llvm_type};
+use super::utils::{to_llvm_type};
 use crate::ast_nodes::binary_op::BinaryOpNode;
 use crate::ast_nodes::block::BlockNode;
 use crate::ast_nodes::destructive_assign::DestructiveAssignNode;
