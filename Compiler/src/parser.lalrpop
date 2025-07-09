@@ -3,7 +3,7 @@
 // use crate::ast::Expr;
 // use crate::ast::Statement;
 
-use crate::lexer_parser::tokens::{Span, KeywordToken, OperatorToken, DelimiterToken};
+use crate::tokens::{Span, KeywordToken, OperatorToken, DelimiterToken};
 use crate::ast_nodes::program::{Program, Statement};
 use crate::ast_nodes::expression::Expression;
 use crate::ast_nodes::let_in::Assignment;
