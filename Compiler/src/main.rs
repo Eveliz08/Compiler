@@ -32,13 +32,15 @@ fn main() {
     // Intentar parsear el código
     match parser.parse(&input_hulk) {
         Ok(mut ast) => {
+            println!("Parsing exitoso!");
+            // Imprimir el AST 
+            print_ast_node(&ast, 0);
             let mut semantic_analyzer = SemanticAnalyzer::new();
             let result = semantic_analyzer.analyze(&mut ast);
             match result {
                 Ok(_) => {
-                    println!("Parsing exitoso!");
-                    // Imprimir el AST de manera bonita y coloreada
-                    print_ast_node(&ast, 0);
+                    println!("Chequeo semántico exitoso!");
+                   
                 }
                 Err(errors) => {
                     println!("\x1b[31mSemantic Errors:");
