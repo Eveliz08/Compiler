@@ -40,9 +40,15 @@ fn main() {
             match result {
                 Ok(_) => {
                     println!("Chequeo semántico exitoso!");
-                    
+                    //Iniciar generacion de codigo
+                    let mut codegen = codegen::generator::Generator::new();
+                    codegen.generate(&mut ast);
+                    println!("Código generado:");
+                    println!("{}", codegen.code);
+                    // Aquí podrías guardar el código generado en un archivo
+                    codegen::writer::write_to_file(&codegen.code, "output.ll");
+                    codegen::runner::run_llvm_ir("output.ll");
 
-                   
                 }
                 Err(errors) => {
                     println!("\x1b[31mSemantic Errors:");
