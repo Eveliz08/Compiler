@@ -17,4 +17,5 @@
 *.hulk
 *.ll
 *.exe
+*.exe.tmp[0-9]*
 Compiler/target
