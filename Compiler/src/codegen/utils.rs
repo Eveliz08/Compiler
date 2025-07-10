@@ -1,5 +1,6 @@
 use super::context::CodegenCtx;
 
+/// Convierte el tipo de tu lenguaje al tipo correspondiente de LLVM.
 pub fn to_llvm_type(type_node: String) -> String {
     match type_node.as_str() {
         "Number" => "double".to_string(),
@@ -9,7 +10,7 @@ pub fn to_llvm_type(type_node: String) -> String {
     }
 }
 
-/// Emit the global string constants and the printf declaration.
+/// Emite las constantes globales de cadena y la declaración de printf.
 pub fn declare_global(output: &mut Vec<String>, context: &mut CodegenCtx) {
     output.push("@PI = constant double 0x400921FB54442D18".into()); // π
     output.push("@E = constant double 0x4005BF0A8B145769".into()); // e
@@ -29,7 +30,7 @@ pub fn declare_global(output: &mut Vec<String>, context: &mut CodegenCtx) {
     output.push("declare i8* @malloc(i64)".into());
 }
 
-/// Emit a call to printf with the given format and value.
+/// Emite una llamada a printf con el formato y valor dados.
 pub fn generate_printf(context: &mut CodegenCtx, value: &str, fmt: &str) {
     let (global_name, arg_type) = match fmt {
         "%f" => ("@.str.f", "double"),
@@ -46,15 +47,15 @@ pub fn generate_printf(context: &mut CodegenCtx, value: &str, fmt: &str) {
     ));
 }
 
-/// Emit the module header—ModuleID, data layout, and target triple—dynamically
-/// obtained from environment variables set by build.rs.
+/// Emite el encabezado del módulo—ModuleID, data layout y target triple—obtenidos dinámicamente
+/// de variables de entorno establecidas por build.rs.
 pub fn generate_header(output: &mut Vec<String>) {
     output.push("; ModuleID = 'hulk'".into());
     output.push("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"".into());
     output.push("target triple = \"x86_64-pc-linux-gnu\"".into());
 }
 
-/// Emit the `main` wrapper around the generated body.
+/// Emite el wrapper `main` alrededor del cuerpo generado.
 pub fn generate_main_wrapper(output: &mut Vec<String>, body: &[String], _global_consts: Vec<String>) {
     output.push("define i32 @main() {".into());
     output.push("entry:".into());
@@ -65,7 +66,7 @@ pub fn generate_main_wrapper(output: &mut Vec<String>, body: &[String], _global_
     output.push("}".into());
 }
 
-/// Emit declarations for runtime helper functions (fmod, pow, concat).
+/// Emite declaraciones para funciones auxiliares de runtime (fmod, pow, concat).
 pub fn generate_runtime_declarations(output: &mut Vec<String>) {
     output.push("".into());
     output.push("; Runtime function declarations".into());
