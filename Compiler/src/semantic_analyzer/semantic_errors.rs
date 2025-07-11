@@ -1,83 +1,83 @@
-//! Defines the `SemanticError` enum and related error reporting utilities.
+//! Define el enum `SemanticError` y utilidades relacionadas para el reporte de errores.
 //!
-//! `SemanticError` encapsulates all types of semantic-level errors encountered during
-//! semantic analysis, such as type mismatches, undefined identifiers, or misuse of operators.
+//! `SemanticError` encapsula todos los tipos de errores semánticos encontrados durante
+//! el análisis semántico, como desajustes de tipo, identificadores indefinidos o mal uso de operadores.
 
 use crate::tokens::{OperatorToken, Span};
 use crate::types_tree::tree_node::TypeNode;
 
-/// Represents all the possible semantic errors that can be encountered during analysis.
+/// Representa todos los posibles errores semánticos que pueden encontrarse durante el análisis.
 #[derive(Debug, Clone, PartialEq)]
 pub enum SemanticError {
-    /// Division by zero attempted.
+    /// Se intentó dividir por cero.
     DivisionByZero(Span),
 
-    /// Use of an identifier that has not been declared.
+    /// Uso de un identificador que no ha sido declarado.
     UndefinedIdentifier(String, Span),
 
-    /// Condition expression is of invalid type (must be boolean).
+    /// La expresión de condición es de tipo inválido (debe ser booleana).
     InvalidConditionType(TypeNode, Span),
 
-    /// Invalid binary operation between two types.
+    /// Operación binaria inválida entre dos tipos.
     InvalidBinaryOperation(TypeNode, TypeNode, OperatorToken, Span),
 
-    /// Invalid unary operation for a given type.
+    /// Operación unaria inválida para un tipo dado.
     InvalidUnaryOperation(TypeNode, OperatorToken, Span),
 
-    /// A function with the same name has already been defined.
+    /// Ya se ha definido una función con el mismo nombre.
     RedefinitionOfFunction(String, Span),
 
-    /// A function is used without being declared.
+    /// Se usa una función sin haber sido declarada.
     UndeclaredFunction(String, Span),
 
-    /// Catch-all for unknown errors.
+    /// Caso general para errores desconocidos.
     UnknownError(String, Span),
 
-    /// A function is called with incorrect number of arguments.
+    /// Se llama a una función con un número incorrecto de argumentos.
     InvalidArgumentsCount(usize, usize, String, Span),
 
-    /// A type argument does not match the expected type.
+    /// Un argumento de tipo no coincide con el tipo esperado.
     InvalidTypeArgument(String, String, String, usize, String, Span),
 
-    /// The return value of a function body does not match the declared return type.
+    /// El valor de retorno del cuerpo de una función no coincide con el tipo de retorno declarado.
     InvalidFunctionReturn(TypeNode, TypeNode, String, Span),
 
-    /// A variable is declared more than once in the same scope.
+    /// Una variable es declarada más de una vez en el mismo ámbito.
     RedefinitionOfVariable(String, Span),
 
-    /// A referenced type does not exist.
+    /// Se hace referencia a un tipo que no existe.
     UndefinedType(String, Span),
 
-    /// A parameter name is repeated in the same function/type definition.
+    /// Un nombre de parámetro se repite en la misma definición de función/tipo.
     ParamNameAlreadyExist(String, String, String, Span),
 
-    /// A type with the same name is already defined.
+    /// Ya se ha definido un tipo con el mismo nombre.
     RedefinitionOfType(String, Span),
 
-    /// A cycle was detected in the type inheritance hierarchy.
+    /// Se detectó un ciclo en la jerarquía de herencia de tipos.
     CycleDetected(String, Span),
 
-    /// Wrong number of arguments passed to a type definition.
+    /// Número incorrecto de argumentos pasados a una definición de tipo.
     InvalidTypeArgumentCount(usize, usize, String, Span),
 
-    /// A method was accessed that does not exist on the given type.
+    /// Se accedió a un método que no existe en el tipo dado.
     InvalidTypeFunctionAccess(String, String, Span),
 
-    /// Attempted access to a private type property.
+    /// Se intentó acceder a una propiedad privada de un tipo.
     InvalidTypePropertyAccess(String, String, Span),
 
-    /// Property does not exist in the given type.
+    /// La propiedad no existe en el tipo dado.
     InvalidTypeProperty(String, String, Span),
 
-    /// Attempted to print an unsupported value type.
+    /// Se intentó imprimir un tipo de valor no soportado.
     InvalidPrint(String, Span),
 
-    /// Invalid iterable passed to a `for` loop (should be `range()`).
+    /// Iterable inválido pasado a un bucle `for` (debe ser `range()`).
     InvalidIterable(String, usize, Span),
 }
 
 impl SemanticError {
-    /// Returns a human-readable message describing the error.
+    /// Devuelve un mensaje legible que describe el error.
     pub fn message(&self) -> String {
         match self {
             SemanticError::DivisionByZero(_) => "Division by zero is not allowed".to_string(),
@@ -151,10 +151,10 @@ impl SemanticError {
         }
     }
 
-    /// Returns the source `Span` where the error occurred.
+    /// Devuelve el `Span` de origen donde ocurrió el error.
     fn span(&self) -> &Span {
         match self {
-            SemanticError::DivisionByZero(sp)
+            | SemanticError::DivisionByZero(sp)
             | SemanticError::UndefinedIdentifier(_, sp)
             | SemanticError::InvalidConditionType(_, sp)
             | SemanticError::InvalidBinaryOperation(_, _, _, sp)
@@ -179,14 +179,14 @@ impl SemanticError {
         }
     }
 
-    /// Constructs a formatted report for the error using the source code.
+    /// Construye un reporte formateado para el error usando el código fuente.
     ///
-    /// # Arguments
-    /// * `input` - The full source input.
-    /// * `missplacement` - Line adjustment (e.g. 1 to hide internal offset).
+    /// # Argumentos
+    /// * `input` - El código fuente completo.
+    /// * `missplacement` - Ajuste de línea (por ejemplo, 1 para ocultar desplazamiento interno).
     pub fn report(&self, input: &str) -> String {
         let span = self.span();
-        let (line, col, line_str, _) = get_line_context(input, span.start, 0);
+        let (line, col, line_str, _) = get_line_context(input, span.start);
         let caret = build_caret_point(col);
 
         let message = self.message();
@@ -199,11 +199,10 @@ impl SemanticError {
     }
 }
 
-/// Retrieves line and column number from a byte offset, for error context.
+/// Recupera el número de línea y columna a partir de un offset de bytes, para contexto de error.
 fn get_line_context(
     input: &str,
     offset: usize,
-    missplacement: i32,
 ) -> (usize, usize, String, usize) {
     if input.is_empty() {
         return (1, 1, String::new(), 0);
@@ -229,12 +228,12 @@ fn get_line_context(
     let byte_in_line = offset.saturating_sub(line_start);
     let chars_before = input[line_start..line_start + byte_in_line].chars().count();
     let column = chars_before + 1;
-    let adjusted_line = (line_number as i32 - missplacement).max(1) as usize;
+    let adjusted_line = (line_number as i32).max(1) as usize;
 
     (adjusted_line, column, line_str, line_start)
 }
 
-/// Builds a string that visually points to a column with a caret (`^`) for error reporting.
+/// Construye una cadena que apunta visualmente a una columna con un caret (`^`) para el reporte de errores.
 fn build_caret_point(col: usize) -> String {
     " ".repeat(col.saturating_sub(1)) + "^"
 }

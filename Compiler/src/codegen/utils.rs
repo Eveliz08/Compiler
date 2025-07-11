@@ -12,10 +12,6 @@ pub fn to_llvm_type(type_node: String) -> String {
 
 /// Emite las constantes globales de cadena y la declaración de printf.
 pub fn declare_global(output: &mut Vec<String>, context: &mut CodegenCtx) {
-    output.push("@PI = constant double 0x400921FB54442D18".into()); // π
-    output.push("@E = constant double 0x4005BF0A8B145769".into()); // e
-    context.add_global_const("PI");
-    context.add_global_const("E");
     output.push(r#"@.str.f = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 1"#.into());
     output.push(r#"@.str.d = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1"#.into());
     output.push(r#"@.str.s = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1"#.into());
@@ -28,6 +24,8 @@ pub fn declare_global(output: &mut Vec<String>, context: &mut CodegenCtx) {
     output.push("declare ptr @strcat(ptr,ptr)".into());
     output.push("declare i32 @strcmp(ptr ,ptr)".into());
     output.push("declare i8* @malloc(i64)".into());
+    output.push("declare double @llvm.frem.f64(double, double)".into());
+    output.push("declare double @llvm.pow.f64(double, double)".into());
 }
 
 /// Emite una llamada a printf con el formato y valor dados.
@@ -47,24 +45,7 @@ pub fn generate_printf(context: &mut CodegenCtx, value: &str, fmt: &str) {
     ));
 }
 
-/// Emite el encabezado del módulo—ModuleID, data layout y target triple—obtenidos dinámicamente
-/// de variables de entorno establecidas por build.rs.
-pub fn generate_header(output: &mut Vec<String>) {
-    output.push("; ModuleID = 'hulk'".into());
-    output.push("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"".into());
-    output.push("target triple = \"x86_64-pc-linux-gnu\"".into());
-}
 
-/// Emite el wrapper `main` alrededor del cuerpo generado.
-pub fn generate_main_wrapper(output: &mut Vec<String>, body: &[String], _global_consts: Vec<String>) {
-    output.push("define i32 @main() {".into());
-    output.push("entry:".into());
-    for line in body {
-        output.push(format!("  {}", line));
-    }
-    output.push("  ret i32 0".into());
-    output.push("}".into());
-}
 
 /// Emite declaraciones para funciones auxiliares de runtime (fmod, pow, concat).
 pub fn generate_runtime_declarations(output: &mut Vec<String>) {
@@ -72,6 +53,21 @@ pub fn generate_runtime_declarations(output: &mut Vec<String>) {
     output.push("; Runtime function declarations".into());
     output.push("declare double @fmod(double, double)".into());
     output.push("declare double @pow(double, double)".into());
+
+    // // Cuerpo de fmod: simplemente llama a la función externa
+    // output.push("define double @fmod(double %x, double %y) {".into());
+    // output.push("entry:".into());
+    // output.push("  %result = call double @llvm.frem.f64(double %x, double %y)".into());
+    // output.push("  ret double %result".into());
+    // output.push("}".into());
+
+    // // Cuerpo de pow: llama a la función externa de LLVM
+    // output.push("define double @pow(double %x, double %y) {".into());
+    // output.push("entry:".into());
+    // output.push("  %result = call double @llvm.pow.f64(double %x, double %y)".into());
+    // output.push("  ret double %result".into());
+    // output.push("}".into());
+    // Cuerpo de concat: implementa la concatenación de cadenas
     output.push("define i8* @concat(i8* %s1, i8* %s2) {".into());
     output.push("entry:".into());
     output.push("  %len1 = call i64 @strlen(i8* %s1)".into());

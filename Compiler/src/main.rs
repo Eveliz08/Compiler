@@ -9,7 +9,6 @@ mod ast_nodes;
 mod codegen;
 mod error_reporter;
 mod semantic_analyzer;
-mod symbol_table;
 mod tokens;
 mod types_tree;
 mod visitor;
@@ -23,7 +22,7 @@ use crate::visitor::printer_visitor::PrinterVisitor;
 fn main() {
     println!("Compilador iniciado");
 
-    let input_hulk = fs::read_to_string("../script.hulk").expect("Failed to read input file");
+    let input_hulk = fs::read_to_string("../src/tests/test10.hulk").expect("Failed to read input file");
 
     // Crear el parser
     let parser = HulkParser::new();

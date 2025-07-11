@@ -47,14 +47,43 @@ impl Generator {
 
 
 
-    fn get_definitions(&mut self, _program: &mut Program) -> Vec<String> {
-        // Implementar lógica según sea necesario
-        Vec::new()
+    fn get_definitions(&mut self, program: &mut Program) -> Vec<String> {
+        let definitions ;
+        self.ctx.append_line(format!("%VTableType = type [ {} x ptr ]", self.ctx.max_vtable_funcs));
+        let vtable_declarations: Vec<String> = self.ctx.vtables_per_type.iter()
+            .map(|vtable| format!("ptr {}", vtable))
+            .collect();
+        self.ctx.append_line(format!("@super_vtable = global [{} x ptr] [{}]", self.ctx.defined_types_count, vtable_declarations.join(", ")));
+        self.generate_get_vtable_method();
+        for statement in &mut program.statements {
+            match statement {
+                Statement::StatementTypeDef(_) => {
+                    statement.accept(self);
+                }
+                Statement::StatementFunctionDef(_) => {
+                    statement.accept(self); 
+                }
+                _ => continue,
+            }
+        } 
+        definitions = self.ctx.generated_lines.clone();
+        self.ctx.generated_lines.clear();
+        definitions 
     }
 
-    fn get_main_code(&mut self, _program: &mut Program) -> Vec<String> {
-        // Implementar lógica según sea necesario
-        Vec::new()
+    fn get_main_code(&mut self, program: &mut Program) -> Vec<String> {
+        let main_code;
+        for statement in &mut program.statements {
+            match statement {
+                Statement::StatementExpression(_) => {
+                    statement.accept(self);
+                }
+                _ => continue,
+            }
+        }
+        main_code = self.ctx.generated_lines.clone();
+        self.ctx.generated_lines.clear();
+        main_code
     }
 }
 
